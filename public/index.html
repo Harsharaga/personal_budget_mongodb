@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Budget Management App - Track Your Expenses</title>
+    <meta name="description" content="A free personal budget app that helps track expenses, manage finances, and stay within your budget.">
+    <meta name="keywords" content="personal budget app, budget tracker, free finance management, financial planning, expense tracking">
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<a href="#main" class="skip">Skip to content</a>
+
+<nav>
+    <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./public/about.html">About</a></li>
+        <li><a href="./public/login.html">Login</a></li>
+        <li><a href="https://google.com">Google</a></li>
+    </ul>
+</nav>
+
+<section class="hero">
+    <h1>Personal Budget</h1>
+    <h2>A personal-budget management app</h2>
+    <img src="./bg.png">
+</section>
+<style>
+    .hero {
+        display: flex;
+        justify-content: center; 
+        align-items: center;     
+        height: 100vh;           
+        flex-direction: column;  
+        text-align: center;      
+    }
+    img {
+        width: 1000px;   
+        height: 600px;   
+        display: block; 
+    }
+</style>
+
+<main class="center" id="main">
+    <div class="page-area">
+        <article>
+            <h1>Chart</h1>
+            <p>
+                <canvas id="myChart" width="400" height="400"></canvas>
+            </p>
+            <p>
+                
+                <div id="mysavings"width="400" height="400"></div>
+            </p>
+        </article>
+    </div>
+</main>
+
+<footer class="bottom">
+    <div class="center">
+        All rights reserved &copy; Fabio Nolasco
+    </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+    var dataSource = {
+        datasets: [
+            {
+                data: [],
+                backgroundColor: [
+                    '#c4ee56',
+                    '#c480c0',
+                    '#52e0c0',
+                    '#01e000',
+                    '#FB317F',
+                    '#00057F',
+                    '#770506'
+                ]
+            }
+        ],
+        labels: []
+    };
+
+    var savingsdata = [];
+
+    function createChart() {
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: dataSource
+        });
+    }
+
+    function createSavingsChart() {
+    var width = 300;
+    var height = 300;
+    var radius = Math.min(width, height) / 2;
+
+    var svg = d3.select("#mysavings")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    var color = d3.scaleOrdinal()
+        .range(d3.schemeSet3);  
+
+    var pie = d3.pie()
+        .value(function(d) { return d.savings; });
+
+    var path = d3.arc()
+        .outerRadius(radius - 10)
+        .innerRadius(0);
+
+    var label = d3.arc()
+        .outerRadius(radius - 50)  
+        .innerRadius(radius - 50);
+
+    var arc = svg.selectAll(".arc")
+        .data(pie(savingsdata))
+        .enter().append("g")
+        .attr("class", "arc");
+
+    arc.append("path")
+        .attr("d", path)
+        .attr("fill", function(d) { return color(d.data.title); });
+
+    arc.append("text")
+        .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+        .attr("dy", "0.35em")
+        .style("text-anchor", "middle")  
+        .style("font-size", "10px")      
+        .text(function(d) { return d.data.title; });
+
+   
+    arc.append("text")
+        .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
+        .attr("dy", "1.5em")
+        .style("text-anchor", "middle")
+        .style("font-size", "10px")
+        .text(function(d) { return d.data.savings; });
+}
+
+    function getBudget() {
+        axios.get('/budget')
+        .then(function (res) {
+            for (var i = 0; i < res.data.myBudget.length; i++) {
+                dataSource.datasets[0].data[i] = res.data.myBudget[i].budget;
+                dataSource.labels[i] = res.data.myBudget[i].title;
+            }
+            createChart();
+        });
+    }
+
+    function getSavings() {
+        axios.get("/savings")
+        .then(function (res) {
+            savingsdata = res.data.mySavings;
+            createSavingsChart(); 
+        });
+    }
+
+    getBudget();
+    getSavings(); 
+</script>
+
+</body>
+</html>
